@@ -25,7 +25,7 @@ In `~/.config/opencode/opencode.json` (tutti i progetti) oppure in `opencode.jso
 ```json
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugin": ["opencode-compaction-vault@git+https://github.com/Cioscos/opencode-compaction-vault.git#v1.0.0"]
+  "plugin": ["opencode-compaction-vault@git+https://github.com/Cioscos/opencode-compaction-vault.git#v1.1.0"]
 }
 ```
 
@@ -43,6 +43,35 @@ Con `"limit": { "context": 65536, "input": 65536, "output": 16384 }` e `"compact
 ## Opzioni
 
 `dir` (default `.opencode/compactions`), `gitignore` (`true`), `toast` (`true`), `essentialTokens` (`1500`), `detailTokens` (`6000`). Si passano con la forma `["<spec>", { ... }]`: vedi il [README inglese](README.md#options). `COMPACTION_VAULT=off` disattiva il plugin.
+
+## Modificare le impostazioni dalla TUI
+
+Il pacchetto include anche un plugin TUI. I plugin TUI si configurano in `tui.json` (accanto a `opencode.json`), quindi aggiungi lì la stessa spec:
+
+```json
+{
+  "$schema": "https://opencode.ai/tui.json",
+  "plugin": [
+    ["opencode-compaction-vault@git+https://github.com/Cioscos/opencode-compaction-vault.git#v1.1.0", {
+      "keybind": "ctrl+shift+v"
+    }]
+  ]
+}
+```
+
+`keybind` è facoltativo: senza, i comandi si raggiungono dalla palette dei comandi e come slash command.
+
+- **Compaction Vault: settings** (`/vault`): modifica tutte le opzioni, più un interruttore `enabled`.
+- **Compaction Vault: archive** (`/vault-archive`): elenca le compattazioni archiviate della sessione corrente e ne mostra il blocco essenziale.
+
+Le modifiche vengono scritte in un file di impostazioni e **valgono subito**: il plugin server lo rilegge a ogni hook, senza riavviare.
+
+- `<progetto>/.opencode/compaction-vault.json`: solo questo progetto (destinazione di default);
+- `~/.config/opencode/compaction-vault.json`: tutti i progetti.
+
+Precedenza: default < opzioni in `opencode.json` < file globale < file di progetto. Nel dialog ogni riga indica da dove arriva il valore, *Save changes to* passa da un file all'altro e *Reset* elimina quello selezionato. I file sono JSON semplice con le stesse chiavi delle opzioni, quindi si possono modificare anche a mano.
+
+Se cambi `dir` a sessione in corso, parte un nuovo archivio nella nuova cartella: i file già archiviati restano dove sono.
 
 ## Licenza
 

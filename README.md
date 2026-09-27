@@ -33,7 +33,7 @@ Add the plugin to your OpenCode config: `~/.config/opencode/opencode.json` for a
 ```json
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugin": ["opencode-compaction-vault@git+https://github.com/Cioscos/opencode-compaction-vault.git#v1.0.0"]
+  "plugin": ["opencode-compaction-vault@git+https://github.com/Cioscos/opencode-compaction-vault.git#v1.1.0"]
 }
 ```
 
@@ -77,7 +77,7 @@ Keep the threshold well above the post-compaction baseline: system prompt and to
 ```json
 {
   "plugin": [
-    ["opencode-compaction-vault@git+https://github.com/Cioscos/opencode-compaction-vault.git#v1.0.0", {
+    ["opencode-compaction-vault@git+https://github.com/Cioscos/opencode-compaction-vault.git#v1.1.0", {
       "dir": ".opencode/compactions",
       "gitignore": true,
       "toast": true,
@@ -97,6 +97,39 @@ Keep the threshold well above the post-compaction baseline: system prompt and to
 | `detailTokens` | `6000` | Size limit for `<detail>`, stated in the prompt |
 
 Set the environment variable `COMPACTION_VAULT=off` to disable the plugin without editing the config.
+
+## Change the settings from the TUI
+
+The package also ships a TUI plugin. TUI plugins are configured in `tui.json` (next to `opencode.json`), so add the same spec there:
+
+```json
+{
+  "$schema": "https://opencode.ai/tui.json",
+  "plugin": [
+    ["opencode-compaction-vault@git+https://github.com/Cioscos/opencode-compaction-vault.git#v1.1.0", {
+      "keybind": "ctrl+shift+v"
+    }]
+  ]
+}
+```
+
+`keybind` is optional; without it the commands are reachable from the command palette and as slash commands.
+
+| Command | Slash | What it does |
+|---|---|---|
+| Compaction Vault: settings | `/vault` | Edit every option above, plus an `enabled` switch |
+| Compaction Vault: archive | `/vault-archive` | List the compactions archived for the current session and show their essential block |
+
+Changes are written to a settings file and **apply immediately**: the server plugin re-reads it on every hook, no restart needed.
+
+| File | Scope |
+|---|---|
+| `<project>/.opencode/compaction-vault.json` | this project (default target) |
+| `~/.config/opencode/compaction-vault.json` | all projects |
+
+Precedence: defaults < plugin options in `opencode.json` < global file < project file. In the dialog each row shows where its value comes from, *Save changes to* switches between the two files, and *Reset* deletes the selected one. The files are plain JSON with the same keys as the options, so you can also edit them by hand.
+
+Changing `dir` in the middle of a session starts a new archive in the new directory: files already archived stay where they are.
 
 ## Results
 

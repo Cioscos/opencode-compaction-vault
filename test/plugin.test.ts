@@ -4,6 +4,7 @@ import { mkdtemp, readFile, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import path from "node:path"
 import plugin from "../src/index"
+import { saveSettings } from "../src/settings"
 
 const SUMMARY = "<essential>\n## Objective\n- ship it\n</essential>\n<detail>\n## Errors\n- ENOENT foo\n</detail>"
 
@@ -29,8 +30,35 @@ function summaryMessage(id: string, text: string) {
 beforeEach(async () => {
   dir = await mkdtemp(path.join(tmpdir(), "vault-"))
   messages = []
+  // Keeps the tests away from the real global settings file.
+  process.env.OPENCODE_CONFIG_DIR = path.join(dir, "global")
 })
-afterEach(() => rm(dir, { recursive: true, force: true }))
+afterEach(async () => {
+  delete process.env.OPENCODE_CONFIG_DIR
+  await rm(dir, { recursive: true, force: true })
+})
+
+test("settings files are picked up without a restart", async () => {
+  const hooks: any = await plugin.server({ client, directory: dir } as any, { essentialTokens: 900 })
+  const prompt = async () => {
+    const output = { prompt: undefined as string | undefined, context: [] }
+    await hooks["experimental.session.compacting"]({ sessionID: "ses_1" }, output)
+    return output.prompt
+  }
+  expect(await prompt()).toContain("under about 900 tokens")
+
+  await saveSettings("project", dir, { essentialTokens: 700, dir: "vault" })
+  expect(await prompt()).toContain("under about 700 tokens")
+  await hooks["experimental.chat.messages.transform"]({}, { messages: [summaryMessage("m1", SUMMARY)] })
+  expect(existsSync(path.join(dir, "vault", "ses_1", "001.md"))).toBe(true)
+
+  await saveSettings("project", dir, { enabled: false })
+  expect(await prompt()).toBeUndefined()
+  const msg = summaryMessage("m2", SUMMARY)
+  await hooks["experimental.chat.messages.transform"]({}, { messages: [msg] })
+  expect(msg.parts).toHaveLength(2)
+  expect(existsSync(path.join(dir, "vault", "ses_1", "002.md"))).toBe(false)
+})
 
 test("archives the summary and replaces it in context", async () => {
   const hooks: any = await plugin.server({ client, directory: dir } as any)
